@@ -262,7 +262,7 @@ function spawnXP(x,y,amount){
   for(let i=0;i<Math.min(3,Math.ceil(amount/5));i++){
     const m=new THREE.Mesh(new THREE.BoxGeometry(.4,.4,.2),new THREE.MeshBasicMaterial({color:0x44ffaa}));
     m.position.set(x+(Math.random()-.5)*1.5,y+(Math.random()-.5)*1.5,0.4);
-    scene.add(m);xpGems.push({mesh:m,x:m.position.x,y:m.position.y,vx:0,vy:0,value:Math.ceil(amount/Math.min(3,Math.ceil(amount/5))),life:8});
+    scene.add(m);xpGems.push({mesh:m,x:m.position.x,y:m.position.y,vx:0,vy:0,value:Math.ceil(amount/Math.min(3,Math.ceil(amount/5))),life:8,life:10};
   }
 }
 
@@ -532,16 +532,14 @@ function updateXP(dt){
     g.life-=dt;
     const dx=playerState.x-g.x,dy=playerState.y-g.y;
     const d=Math.hypot(dx,dy);
-    // Magnet pull — always active, stronger at close range
-    const pullR = 4 + playerState.magnetR;
-    if(d < pullR){
-      const force = 180 * (1 - d/pullR) + 80;
-      g.vx += (dx/d) * force * dt;
-      g.vy += (dy/d) * force * dt;
+    // ALWAYS pull toward player, big radius covers whole map
+    const pullR = 8 + playerState.magnetR;
+    if(d > 0.1 && d < pullR){
+      const speed = 30 + playerState.magnetR*2;
+      g.x += (dx/d) * speed * dt;
+      g.y += (dy/d) * speed * dt;
+      g.mesh.position.x = g.x; g.mesh.position.y = g.y;
     }
-    g.vx *= .96; g.vy *= .96;
-    g.x += g.vx*dt; g.y += g.vy*dt;
-    g.mesh.position.x = g.x; g.mesh.position.y = g.y;
     if(d < 1.5){
       gainXP(g.value); sound('pickup');
       scene.remove(g.mesh); xpGems.splice(i,1);
