@@ -532,12 +532,22 @@ function updateXP(dt){
     g.life-=dt;
     const dx=playerState.x-g.x,dy=playerState.y-g.y;
     const d=Math.hypot(dx,dy);
-    if(d<3+playerState.magnetR){g.vx+=dx/d*60*dt;g.vy+=dy/d*60*dt;}if(d<2.5){gainXP(g.value);sound('pickup');scene.remove(g.mesh);xpGems.splice(i,1);continue;}
-    g.vx*=.92;g.vy*=.92;
-    g.x+=g.vx*dt;g.y+=g.vy*dt;
-    g.mesh.position.x=g.x;g.mesh.position.y=g.y;
-    if(d<1){gainXP(g.value);sound('pickup');scene.remove(g.mesh);xpGems.splice(i,1);}
-    else if(g.life<=0){scene.remove(g.mesh);xpGems.splice(i,1);}
+    // Magnet pull — always active, stronger at close range
+    const pullR = 4 + playerState.magnetR;
+    if(d < pullR){
+      const force = 180 * (1 - d/pullR) + 80;
+      g.vx += (dx/d) * force * dt;
+      g.vy += (dy/d) * force * dt;
+    }
+    g.vx *= .96; g.vy *= .96;
+    g.x += g.vx*dt; g.y += g.vy*dt;
+    g.mesh.position.x = g.x; g.mesh.position.y = g.y;
+    if(d < 1.5){
+      gainXP(g.value); sound('pickup');
+      scene.remove(g.mesh); xpGems.splice(i,1);
+    } else if(g.life <= 0){
+      scene.remove(g.mesh); xpGems.splice(i,1);
+    }
   }
 }
 
