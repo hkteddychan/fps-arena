@@ -201,7 +201,7 @@ player.add(playerAim);
 
 // ================= 子彈 + 視覺 =================
 const bullets=[];
-const BULLET_LIFE=1.5;
+const BULLET_LIFE=4;
 function spawnBullet(x,y,angle,opts={}){
   const speed=opts.speed||14;
   const dmg=opts.dmg||10;
@@ -396,7 +396,7 @@ function autoShoot(dt){
     for(let i=0;i<n;i++){
       const a=angle+(i-(n-1)/2)*spread;
       spawnBullet(playerState.x,playerState.y,a,{
-        speed:playerState.speed,dmg:playerState.damage,
+        speed:playerState.speed*1.8,dmg:playerState.damage,
         pierce:playerState.pierce,explosive:playerState.explosive,
         size:playerState.bulletSize,color:0x88ffff,angle:a
       });
