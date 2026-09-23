@@ -244,7 +244,7 @@ function spawnEnemy(type,x,y){
   }
   e.position.set(x,y,0.5);
   scene.add(e);
-  enemies.push({mesh:e,type,x,y,hp:def.hp,maxHp:def.hp,speed:def.speed,dmg:def.dmg,score:def.score,xp:def.xp,size:def.size,r:def.r,attackCd:0,lastDir:{x:1,y:0},phasing:def.r==='phasing',isBoss:type==='boss'});
+  e.position.set(x,y,0.5);enemies.push({mesh:e,type,x,y,hp:def.hp,maxHp:def.hp,speed:def.speed,dmg:def.dmg,score:def.score,xp:def.xp,size:def.size,r:def.r,attackCd:0,lastDir:{x:1,y:0},phasing:def.r==='phasing',isBoss:type==='boss'});
   return e;
 }
 
@@ -442,18 +442,18 @@ function updateEnemies(dt){
     let nx=0,ny=0;
     if(dist>0){nx=dx/dist;ny=dy/dist;}
     if(e.r==='boss'){
-      e.mesh.position.x+=nx*e.speed*dt*0.7;e.mesh.position.y+=ny*e.speed*dt*0.7;
+      e.mesh.position.x+=nx*e.speed*dt*0.7;e.mesh.position.y+=ny*e.speed*dt*0.7;e.x=e.mesh.position.x;e.y=e.mesh.position.y;
       e.attackCd-=dt;
       if(e.attackCd<=0){e.attackCd=2;const base=Math.atan2(dy,dx);for(let k=0;k<6;k++)spawnEnemyBullet(e.x,e.y,base+(k-2.5)*0.3,15,5,0xff2244);}
       if(Math.random()<0.005)spawnEnemy('brute',e.x+(Math.random()-.5)*6,e.y+(Math.random()-.5)*6);
     }else if(e.r==='shoot'){
-      if(dist>15){e.mesh.position.x+=nx*e.speed*dt;e.mesh.position.y+=ny*e.speed*dt;}
+      if(dist>15){e.mesh.position.x+=nx*e.speed*dt;e.mesh.position.y+=ny*e.speed*dt;e.x=e.mesh.position.x;e.y=e.mesh.position.y;e.x=e.mesh.position.x;e.y=e.mesh.position.y;}
       else if(dist<8){e.mesh.position.x-=nx*e.speed*dt;e.mesh.position.y-=ny*e.speed*dt;}
       e.attackCd-=dt;
       if(e.attackCd<=0&&dist<25){e.attackCd=1.5;spawnEnemyBullet(e.x,e.y,Math.atan2(dy,dx),e.dmg,6,0xff66cc);}
     }else{
-      e.mesh.position.x+=nx*e.speed*dt;e.mesh.position.y+=ny*e.speed*dt;
-      if(dist<1.2+e.size){e.attackCd-=dt;if(e.attackCd<=0){e.attackCd=e.isBoss?1.2:1;damagePlayer(e.dmg);}}else e.attackCd=0;
+      e.mesh.position.x+=nx*e.speed*dt;e.mesh.position.y+=ny*e.speed*dt;e.x=e.mesh.position.x;e.y=e.mesh.position.y;e.x=e.mesh.position.x;e.y=e.mesh.position.y;
+      if(dist<e.size+1){e.attackCd-=dt;if(e.attackCd<=0){e.attackCd=e.isBoss?1.2:1;damagePlayer(e.dmg);}}else e.attackCd=0;
     }
     if(e.hp<=0){
       scene.remove(e.mesh);
@@ -495,7 +495,7 @@ function updateBullets(dt){
     }
     for(let j=enemies.length-1;j>=0;j--){
       const e=enemies[j];
-      if(Math.hypot(e.x-b.x,e.y-b.y)<e.size*0.6+b.r){
+      if(Math.hypot(e.x-b.x,e.y-b.y)<e.size+b.r){
         e.hp-=b.dmg;
         if(playerState.knockback&&b.angle!==undefined){
           e.x+=Math.cos(b.angle)*playerState.knockback*0.15;
@@ -522,7 +522,7 @@ function updateEnemyBullets(dt){
     const b=eBullets[i];
     b.mesh.position.x+=b.dx*dt;b.mesh.position.y+=b.dy*dt;b.life-=dt;
     if(b.life<=0||Math.abs(b.mesh.position.x)>SCENE_SIZE||Math.abs(b.mesh.position.y)>SCENE_SIZE){scene.remove(b.mesh);eBullets.splice(i,1);continue;}
-    if(Math.hypot(b.mesh.position.x-playerState.x,b.mesh.position.y-playerState.y)<1){damagePlayer(b.dmg);scene.remove(b.mesh);eBullets.splice(i,1);}
+    if(Math.hypot(b.mesh.position.x-playerState.x,b.mesh.position.y-playerState.y)<1.2){damagePlayer(b.dmg);scene.remove(b.mesh);eBullets.splice(i,1);}
   }
 }
 
@@ -574,7 +574,7 @@ function showCenter(t,color='#4af'){
 }
 
 // ================= 主循環 =================
-let running=false;window.__gameDebug=()=>({running,playerState,enemiesCount:enemies.length,bulletsCount:bullets.length,waveTimer,waveSpawned,waveEnemies});
+let running=false;
 const clock=new THREE.Clock();
 function loop(){
   requestAnimationFrame(loop);
