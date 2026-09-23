@@ -582,7 +582,7 @@ function showCenter(t,color='#4af'){
 }
 
 // ================= 主循環 =================
-let running=false;window.__gameDebug=()=>({running,playerState,enemiesCount:enemies.length,bulletsCount:bullets.length,waveTimer,waveSpawned,waveEnemies,xpCount:xpGems.length,pickupsCount:pickups.length,enemiesSample:enemies.slice(0,3).map(e=>({x:e.x,y:e.y,hp:e.hp,size:e.size,r:e.r,mx:e.mesh.position.x,my:e.mesh.position.y}))});
+let running=false;window.__gameDebug=()=>({running,playerState,enemiesCount:enemies.length,bulletsCount:bullets.length,waveTimer,waveSpawned,waveEnemies,xpCount:xpGems.length,xpSample:xpGems.slice(0,2).map(g=>({x:g.x.toFixed(1),y:g.y.toFixed(1),value:g.value,life:g.life,dist:Math.hypot(g.x-playerState.x,g.y-playerState.y).toFixed(1)})),pickupsCount:pickups.length,enemiesSample:enemies.slice(0,3).map(e=>({x:e.x,y:e.y,hp:e.hp,size:e.size,r:e.r,mx:e.mesh.position.x,my:e.mesh.position.y}))});
 const clock=new THREE.Clock();
 function loop(){
   requestAnimationFrame(loop);
