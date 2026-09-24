@@ -171,6 +171,10 @@ function fillWilds(){
 
 // ===== 掟精靈球（無限，自動瞄準最近目標） =====
 function throwBall(tx,ty){
+  // 每 2 秒先可掟一個（玩家冷卻）
+  const now=performance.now();
+  if(now-(player.lastThrow||0)<2000) return;
+  player.lastThrow=now;
   // 若 click 點附近有野怪，向最近嗰隻瞄準（帶 target 追蹤）
   let tgt=null, bd=180;
   for(const w of wilds){
@@ -265,12 +269,28 @@ function summonPet(bi){
   const d=bag[bi].dex;
   pets.push({bi,dex:d,hp:bag[bi].hp,mp:bag[bi].mp,x:player.x+ (Math.random()*40-20),y:player.y+(Math.random()*40-20),atkCd:0,skillCd:0});
   flashText('出戰!'+d.name,player.x,player.y-40,'#7CFC00');
+  updateBagUI();   // 更新 highlight
 }
 function recallPets(){
   // 收回（保留狀態）
   for(const p of pets){ if(bag[p.bi]){bag[p.bi].hp=p.hp; bag[p.bi].mp=p.mp;} }
   pets=[];
   updateBagUI();
+}
+// 單隻收回
+function recallPet(bi){
+  const idx=pets.findIndex(p=>p.bi===bi);
+  if(idx>=0){
+    const p=pets[idx];
+    if(bag[p.bi]){ bag[p.bi].hp=p.hp; bag[p.bi].mp=p.mp; }
+    pets.splice(idx,1);
+    updateBagUI();
+  }
+}
+// 點按 slot → 只放出（回收靠行近自動）
+function togglePet(bi){
+  if(!bag[bi]) return;
+  if(!pets.find(p=>p.bi===bi)) summonPet(bi);
 }
 
 // ===== 對戰：寵物打中立怪(NPC寵磨血到HP1)/敵人寵 =====
@@ -355,10 +375,10 @@ function updateNPC(n,dt){
   const a = tw?Math.atan2(tw.y-n.y,tw.x-n.x):0;
   n.x+=Math.cos(a)*n.spd*dt; n.y+=Math.sin(a)*n.spd*dt;
   n.x=Math.max(20,Math.min(W-20,n.x)); n.y=Math.max(20,Math.min(H-20,n.y));
-  // 掟球（向最近野怪）
+  // 掟球（向最近野怪）— NPC 隔 3 秒先掟一個
   n.throwT-=dt;
   if(tw && bw<220 && n.throwT<=0){
-    n.throwT=0.9+Math.random()*1.2;
+    n.throwT=3.0;
     npcThrow(n,tw.x,tw.y);
   }
   // NPC 有寵就出戰（自動召喚）
@@ -447,12 +467,12 @@ function drawDrop(db){
   const t=performance.now(), arcY=Math.sin((t/60)%Math.PI)*-4;
   ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(db.x,db.y+arcY,8,0,6.28); ctx.fill();
   ctx.fillStyle='#c2300f'; ctx.beginPath(); ctx.arc(db.x,db.y+arcY,4.5,0,6.28); ctx.fill();
+  // 剩餘時間（30 秒倒數）
+  const left=Math.max(0,30-Math.floor((t-db.t)/1000));
   ctx.fillStyle='#ffd24a'; ctx.font='10px sans-serif'; ctx.textAlign='center';
-  ctx.fillText('執返',db.x,db.y-16);
-  // 回血進度
-  const regen=Math.floor((performance.now()-db.t)/1000);
+  ctx.fillText('⏳'+left,db.x,db.y-16);
   ctx.fillStyle='#9ab'; ctx.font='9px sans-serif';
-  ctx.fillText('回血 '+(db.dex.hp>regen?db.dex.hp-regen+' HP':'滿'),db.x,db.y+20);
+  ctx.fillText('行近執返',db.x,db.y+18);
 }
 function drawFlag(){
   if(!flagPt) return;
@@ -484,6 +504,9 @@ function updateBagUI(){
     if(i<bag.length){
       s.textContent=bag[i].dex.emoji;
       if(pets.find(p=>p.bi===i)) s.classList.add('active');
+      // 單擊切換放出/收回
+      s.style.cursor='pointer';
+      s.addEventListener('click',()=>togglePet(i));
       // 血量 mini bar
       const m=document.createElement('div'); m.className='hpmini';
       const r=document.createElement('i');
@@ -511,6 +534,14 @@ function update(dtS){
   if(timeLeft<=0){ timeLeft=0; endGame(); return; }
   updateTimerUI();
 
+  // 物品箱內寵物每 1 秒補 1 HP（滿血先可再召喚）
+  for(const s of bag){
+    if(s.hp<s.dex.hp){
+      s.healAcc=(s.healAcc||0)+dtS;
+      while(s.healAcc>=1 && s.hp<s.dex.hp){ s.hp++; s.healAcc-=1; }
+    }
+  }
+
   // 玩家移動
   const mvx=(keys['arrowright']||keys['d']?1:0)-(keys['arrowleft']||keys['a']?1:0);
   const mvy=(keys['arrowdown']||keys['s']?1:0)-(keys['arrowup']||keys['w']?1:0);
@@ -533,8 +564,7 @@ function update(dtS){
   }
 
   // 玩家寵物：控制模式 + 對戰
-  for(const p of pets){
-    if(p.hp<=0) continue;
+  for(const p of [...pets]){
     // 控制
     if(ctrlMode==='follow'){
       petMoveToward(p,player.x,player.y,dtS);
@@ -579,20 +609,25 @@ function update(dtS){
     }
   }
 
-  // 執返精靈球（玩家）
+  // 精靈球過期（30 秒內唔回收就消失）＋ 玩家執返
   for(let i=dropBalls.length-1;i>=0;i--){
     const db=dropBalls[i];
+    // 30 秒過期消失
+    if(performance.now()-db.t>30000){ dropBalls.splice(i,1); continue; }
     // 玩家執返自己
     if(db.owner==='player' && Math.hypot(db.x-player.x,db.y-player.y)<45){
+      if(bag.length>=MAX_BAG && !(db.bagIdx>=0 && bag[db.bagIdx])){ flashText('🎒 滿! 執唔到',db.x,db.y-20,'#f66'); continue; } // 箱滿留地面（除非放返原本格）
       dropBalls.splice(i,1);
-      if(bag.length<MAX_BAG){
+      if(db.bagIdx>=0 && bag[db.bagIdx]){
+        // 放返原本格，hp 由 1 開始回血
+        bag[db.bagIdx].hp=1; bag[db.bagIdx].mp=0;
+      } else {
         bag.push({dex:db.dex,hp:1,mp:0});
-        flashText('執返'+db.dex.name+' ✓',player.x,player.y-30,'#7CFC00');
       }
+      flashText('執返'+db.dex.name+' ✓',player.x,player.y-30,'#7CFC00');
       updateBagUI();
       continue;
     }
-    // 回血中
   }
   updateScoreUI();
 }
