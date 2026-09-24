@@ -175,12 +175,12 @@ function throwBall(tx,ty){
   const now=performance.now();
   if(now-(player.lastThrow||0)<2000) return;
   player.lastThrow=now;
-  // 若 click 點附近有野怪，向最近嗰隻瞄準（帶 target 追蹤）
-  let tgt=null, bd=180;
+  // 若 click 點附近有野怪，向最近嗰隻瞄準（帶 target 追蹤，優先待收服）
+  let tgt=null, bd=320;
   for(const w of wilds){
-    if(w.pending||w.hp<=0) continue;
+    if(w.hp<=0) continue;
     const d=Math.hypot(w.x-tx,w.y-ty);
-    if(d<bd){ bd=d; tgt=w; }
+    if(d<bd || (w.pending&&d<500)){ bd=d; tgt=w; }
   }
   const aimX = tgt? tgt.x:tx, aimY = tgt? tgt.y:ty;
   const dx=aimX-player.x, dy=aimY-player.y, d=Math.hypot(dx,dy)||1;
@@ -259,38 +259,29 @@ function recallAll(){
   team=[];
 }
 
-// ===== 出戰寵物（對應 team 每個 bag index） =====
-// petObj = {bi, dex, hp, mp, x, y, atkCd, mpCd}
-let pets=[];
+// ===== 出戰寵物 =====
+// 放出 = 離開物品箱（袋少一格）；死亡/收回先放返入箱
+let pets=[];   // pets 每隻 = 袋外嘅出場寵
 function summonPet(bi){
   if(!bag[bi]) return;
   if(bag[bi].hp<bag[bi].dex.hp){ flashText('未滿血先可召喚',player.x,player.y-30,'#f66'); return; }
-  if(pets.find(p=>p.bi===bi)) return;
   const d=bag[bi].dex;
-  pets.push({bi,dex:d,hp:bag[bi].hp,mp:bag[bi].mp,x:player.x+ (Math.random()*40-20),y:player.y+(Math.random()*40-20),atkCd:0,skillCd:0});
+  // 由袋移走（放出 = 離開箱）
+  const [slot]=bag.splice(bi,1);
+  pets.push({bi:-1, dex:d, hp:slot.hp, mp:slot.mp, x:player.x+(Math.random()*40-20), y:player.y+(Math.random()*40-20), atkCd:0, skillCd:0});
   flashText('出戰!'+d.name,player.x,player.y-40,'#7CFC00');
-  updateBagUI();   // 更新 highlight
+  updateBagUI();
 }
+// 收回所有放返入箱
 function recallPets(){
-  // 收回（保留狀態）
-  for(const p of pets){ if(bag[p.bi]){bag[p.bi].hp=p.hp; bag[p.bi].mp=p.mp;} }
+  for(const p of pets){ bag.push({dex:p.dex,hp:p.hp,mp:p.mp}); }
   pets=[];
   updateBagUI();
 }
-// 單隻收回
-function recallPet(bi){
-  const idx=pets.findIndex(p=>p.bi===bi);
-  if(idx>=0){
-    const p=pets[idx];
-    if(bag[p.bi]){ bag[p.bi].hp=p.hp; bag[p.bi].mp=p.mp; }
-    pets.splice(idx,1);
-    updateBagUI();
-  }
-}
-// 點按 slot → 只放出（回收靠行近自動）
+// 點按 slot → 放出
 function togglePet(bi){
   if(!bag[bi]) return;
-  if(!pets.find(p=>p.bi===bi)) summonPet(bi);
+  summonPet(bi);
 }
 
 // ===== 對戰：寵物打中立怪(NPC寵磨血到HP1)/敵人寵 =====
@@ -343,9 +334,9 @@ function petFight(p,dt,ownerFlag){
   }
 }
 function onPetDown(pet){
-  // 寵物死亡：變精靈球，原玩家/NPC 要執返
+  // 寵物死亡：變精靈球，原玩家/NPC 要執返（執返先放返入箱）
   const owner = pet.ownerNpc ? {npc:true, ref:pet.ownerNpc} : 'player';
-  dropBalls.push({owner, bagIdx:pet.bi, dex:pet.dex, x:pet.x, y:pet.y, t:performance.now()});
+  dropBalls.push({owner, dex:pet.dex, x:pet.x, y:pet.y, t:performance.now()});
   // 從 pets 移除
   const ci = pet.ownerNpc ? pet.ownerNpc.pets.indexOf(pet) : pets.indexOf(pet);
   if(ci>=0) (pet.ownerNpc?pet.ownerNpc.pets:pets).splice(ci,1);
@@ -503,8 +494,7 @@ function updateBagUI(){
     s.className='slot'+(i<bag.length?'':' empty');
     if(i<bag.length){
       s.textContent=bag[i].dex.emoji;
-      if(pets.find(p=>p.bi===i)) s.classList.add('active');
-      // 單擊切換放出/收回
+      // 點按 → 放出（離開物品箱）
       s.style.cursor='pointer';
       s.addEventListener('click',()=>togglePet(i));
       // 血量 mini bar
@@ -616,14 +606,9 @@ function update(dtS){
     if(performance.now()-db.t>30000){ dropBalls.splice(i,1); continue; }
     // 玩家執返自己
     if(db.owner==='player' && Math.hypot(db.x-player.x,db.y-player.y)<45){
-      if(bag.length>=MAX_BAG && !(db.bagIdx>=0 && bag[db.bagIdx])){ flashText('🎒 滿! 執唔到',db.x,db.y-20,'#f66'); continue; } // 箱滿留地面（除非放返原本格）
+      if(bag.length>=MAX_BAG){ flashText('🎒 滿! 執唔到',db.x,db.y-20,'#f66'); continue; } // 箱滿留地面
       dropBalls.splice(i,1);
-      if(db.bagIdx>=0 && bag[db.bagIdx]){
-        // 放返原本格，hp 由 1 開始回血
-        bag[db.bagIdx].hp=1; bag[db.bagIdx].mp=0;
-      } else {
-        bag.push({dex:db.dex,hp:1,mp:0});
-      }
+      bag.push({dex:db.dex,hp:1,mp:0});   // 執返入箱，hp 由 1 開始回血
       flashText('執返'+db.dex.name+' ✓',player.x,player.y-30,'#7CFC00');
       updateBagUI();
       continue;
