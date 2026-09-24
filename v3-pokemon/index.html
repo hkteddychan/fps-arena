@@ -7,17 +7,17 @@
 <style>
   * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
   body { background:#1a2238; color:#eef; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang HK',sans-serif; overflow:hidden; height:100vh; touch-action:none; user-select:none; }
-  #wrap { width:100vw; height:100vh; display:flex; flex-direction:column; }
+  #wrap { width:100vw; height:100vh; height:100dvh; display:flex; flex-direction:column; }
   #hud { height:56px; background:rgba(10,14,26,.92); display:flex; align-items:center; justify-content:space-between; padding:0 10px; border-bottom:2px solid #2a3a55; z-index:5; flex-shrink:0; }
   #hud .brand { font-size:15px; font-weight:bold; }
   #hud .timer { font-size:19px; font-weight:bold; color:#ffd24a; }
   #hud .score { font-size:13px; }
-  #gamewrap { flex:1; position:relative; overflow:hidden; }
+  #gamewrap { flex:1; position:relative; overflow:hidden; min-height:0; }
   canvas { width:100%; height:100%; display:block; background:#3a8f4f; }
-  #joy { position:absolute; width:110px; height:110px; border-radius:50%; background:rgba(255,255,255,.12); bottom:104px; left:14px; touch-action:none; }
+  #joy { position:absolute; width:110px; height:110px; border-radius:50%; background:rgba(255,255,255,.12); bottom:12px; left:14px; touch-action:none; }
   #joy .knob { position:absolute; width:46px; height:46px; border-radius:50%; background:rgba(255,255,255,.5); left:32px; top:32px; }
-  /* 底部控制 */
-  #controls { position:absolute; left:0; right:0; bottom:0; height:88px; background:rgba(10,14,26,.8); backdrop-filter:blur(3px); border-top:2px solid #2a3a55; display:none; z-index:6; align-items:center; justify-content:space-between; padding:0 14px; }
+  /* 底部控制（flex 固定，唔會比瀏覽器 UI 推出街） */
+  #controls { display:none; height:88px; background:rgba(10,14,26,.9); border-top:2px solid #2a3a55; z-index:6; align-items:center; justify-content:space-between; padding:0 14px; flex-shrink:0; }
   #controls button { border:none; border-radius:12px; color:#fff; font-weight:bold; display:flex; flex-direction:column; align-items:center; justify-content:center; font-size:12px; box-shadow:0 3px 8px rgba(0,0,0,.35); }
   #controls .btn-icon { font-size:20px; line-height:1; margin-bottom:3px; }
   #throwBtn { width:76px; height:76px; border-radius:50%; background:radial-gradient(circle,#ff5a3c,#c2300f); border:3px solid #fff; font-size:11px; }
@@ -35,6 +35,7 @@
   #modeState { position:absolute; top:6px; left:6px; background:rgba(10,14,26,.82); border-radius:8px; padding:4px 8px; font-size:12px; z-index:6; display:none; }
   #modeState .m { color:#9ab; } #modeState .v { color:#ffd24a; font-weight:bold; }
   #catchHint { position:absolute; left:50%; top:60px; transform:translateX(-50%); background:rgba(255,210,74,.25); border:1px solid #ffd24a; color:#ffd24a; border-radius:8px; padding:4px 12px; font-size:13px; z-index:6; display:none; }
+  #toast { position:absolute; left:50%; top:52%; transform:translate(-50%,-50%); background:rgba(0,0,0,.8); border:2px solid #ffd24a; color:#ffd24a; border-radius:12px; padding:12px 22px; font-size:20px; font-weight:bold; z-index:9; display:none; text-align:center; }
   #modeMenu { position:absolute; right:12px; bottom:100px; background:rgba(10,14,26,.96); border:1px solid #2a3a55; border-radius:12px; padding:8px; z-index:8; display:none; flex-direction:column; gap:6px; }
   #modeMenu button { border:none; border-radius:8px; padding:8px 18px; font-size:14px; font-weight:bold; color:#fff; text-align:left; }
   #modeMenu button:hover { filter:brightness(1.2); }
@@ -69,11 +70,7 @@
     <div id="modeState"><span class="m">模式</span>: <span class="v" id="modeVal">Follow</span></div>
     <div id="bag"><div class="title" id="bagTitle">🎒 (0/10)</div><div class="slots" id="slots"></div></div>
     <div id="catchHint">🎯 待收服!掟精靈球!</div>
-    <div id="controls">
-      <button id="modeBtn"><span class="btn-icon">🎯</span><span id="modeBtnLbl">模式</span></button>
-      <button id="throwBtn"><span class="btn-icon">🎯</span>掟</button>
-      <button id="summonBtn"><span class="btn-icon">🐾</span><span id="summonLbl">召喚</span></button>
-    </div>
+    <div id="toast"></div>
     <div id="modeMenu">
       <button style="background:#2d7ff9" data-m="follow">👟 Follow Me</button>
       <button style="background:#b8860b" data-m="flag">🚩 插旗(集合點)</button>
@@ -92,6 +89,12 @@
       <div class="det" id="endDetail"></div>
       <button id="againBtn">🔄 再玩一次</button>
     </div>
+  </div>
+  <!-- 底部控制（wrap 直接子元素，固定喺最底） -->
+  <div id="controls">
+    <button id="modeBtn"><span class="btn-icon">🎯</span><span id="modeBtnLbl">模式</span></button>
+    <button id="throwBtn"><span class="btn-icon">🎯</span>掟</button>
+    <button id="summonBtn"><span class="btn-icon">🐾</span><span id="summonLbl">召喚</span></button>
   </div>
 </div>
 
@@ -148,6 +151,13 @@ let wins=0, losses=0;
 
 // ===== 工具 =====
 function flashText(msg,x,y,color){ flashMsgs.push({msg,x,y,color,t:performance.now(),life:1.4}); }
+// 螢幕中央 toast（lvl up 等，3-5 秒消失）
+let toasts=[];
+function toastMsg(msg){
+  toasts.push({msg,t:Date.now(),dur:4000});
+  const el=document.getElementById('toast');
+  if(el) el.textContent=msg;
+}
 function shuffle(a){ for(let i=a.length-1;i;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; }
 function randWild(){
   const rar=RARITY_WEIGHT[Math.floor(Math.random()*RARITY_WEIGHT.length)];
@@ -206,24 +216,55 @@ function tryCatch(w, owner){
   if(owner && owner.npc){
     // NPC 掟中
     if(w.pending){ flashText('搶走!',w.x,w.y-30,'#f66'); removeWild(w); return; }
-    w.hp-=5; w.hitT=performance.now(); flashText('-5',w.x,w.y-30,'#ff5a5a');
+    w.hp-=1; w.hitT=performance.now(); flashText('-1',w.x,w.y-30,'#ff5a5a');
     if(w.hp<=0){ if(owner.ref && owner.ref.bag.length<MAX_BAG){ owner.ref.bag.push({dex:w.dex,hp:w.dex.hp,mp:w.dex.mp}); flashText(owner.ref.name+'收服!',w.x,w.y-30,'#ffd24a'); } removeWild(w); }
     return;
   }
   // 玩家掟中
   if(w.pending){
-    if(bag.length>=MAX_BAG){ flashText('🎒 滿!',w.x,w.y-30,'#f66'); return; }
-    bag.push({dex:w.dex,hp:w.dex.hp,mp:w.dex.mp});
-    flashText('收服!'+w.dex.name+' ✓',w.x,w.y-30,'#ffd24a');
+    // 重複捉同一種 → lvl up（不佔新格），滿袋先擋
+    const sameIdx = bag.findIndex(s=>s.dex.id===w.dex.id);
+    if(sameIdx>=0){
+      const s=bag[sameIdx];
+      s.count=(s.count||0)+1;
+      if(s.count>=5){
+        s.lvl=(s.lvl||1)+1; s.count=0;
+        // 升 lvl 強寵（+HP/攻/速）
+        s.dex={...s.dex, hp:s.dex.hp+5, atk:s.dex.atk+1};
+        s.hp=s.dex.hp; s.mp=s.dex.mp;
+        toastMsg('⬆ '+w.dex.name+' 升到 Lv'+(s.lvl||1)+'!');
+      } else {
+        flashText(w.dex.name+' ×'+s.count,w.x,w.y-30,'#ffd24a');
+      }
+    } else {
+      if(bag.length>=MAX_BAG){ flashText('🎒 滿!',w.x,w.y-30,'#f66'); return; }
+      bag.push({dex:w.dex,hp:w.dex.hp,mp:w.dex.mp,count:1,lvl:1});
+      flashText('收服!'+w.dex.name+' ✓',w.x,w.y-30,'#ffd24a');
+    }
     document.getElementById('catchHint').style.display='none';
     removeWild(w); updateBagUI(); updateScoreUI();
     return;
   }
-  w.hp-=5; w.hitT=performance.now(); flashText('-5',w.x,w.y-30,'#ff5a5a');
+  w.hp-=1; w.hitT=performance.now(); flashText('-1',w.x,w.y-30,'#ff5a5a');
   if(w.hp<=0){
-    if(bag.length>=MAX_BAG){ flashText('🎒 滿!',w.x,w.y-30,'#f66'); /*變pending俾人執*/ w.pending=true; w.pendingT=performance.now(); w.hp=1; pendingCount++; return; }
-    bag.push({dex:w.dex,hp:w.dex.hp,mp:w.dex.mp});
-    flashText('收服!'+w.dex.name+' ✓',w.x,w.y-30,'#ffd24a');
+    if(bag.length>=MAX_BAG && !bag.some(s=>s.dex.id===w.dex.id)){ flashText('🎒 滿!',w.x,w.y-30,'#f66'); /*變pending俾人執*/ w.pending=true; w.pendingT=performance.now(); w.hp=1; pendingCount++; return; }
+    // 重複捉同一種 → lvl up（不佔新格）
+    const sameIdx = bag.findIndex(s=>s.dex.id===w.dex.id);
+    if(sameIdx>=0){
+      const s=bag[sameIdx];
+      s.count=(s.count||0)+1;
+      if(s.count>=5){
+        s.lvl=(s.lvl||1)+1; s.count=0;
+        s.dex={...s.dex, hp:s.dex.hp+5, atk:s.dex.atk+1};
+        s.hp=s.dex.hp; s.mp=s.dex.mp;
+        toastMsg('⬆ '+w.dex.name+' 升到 Lv'+(s.lvl||1)+'!');
+      } else {
+        flashText(w.dex.name+' ×'+s.count,w.x,w.y-30,'#ffd24a');
+      }
+    } else {
+      bag.push({dex:w.dex,hp:w.dex.hp,mp:w.dex.mp,count:1,lvl:1});
+      flashText('收服!'+w.dex.name+' ✓',w.x,w.y-30,'#ffd24a');
+    }
     removeWild(w); updateBagUI(); updateScoreUI();
   }
 }
@@ -264,6 +305,7 @@ function recallAll(){
 let pets=[];   // pets 每隻 = 袋外嘅出場寵
 function summonPet(bi){
   if(!bag[bi]) return;
+  if(pets.length>=3){ flashText('一隊最多3隻!',player.x,player.y-30,'#f66'); return; }
   if(bag[bi].hp<bag[bi].dex.hp){ flashText('未滿血先可召喚',player.x,player.y-30,'#f66'); return; }
   const d=bag[bi].dex;
   // 由袋移走（放出 = 離開箱）
@@ -418,8 +460,8 @@ function drawWild(w){
   ctx.font='10px sans-serif'; ctx.fillStyle='#eef'; ctx.fillText(w.dex.name,x,y-w.r-18);
   // 待收服：閃框 + 倒數
   if(w.pending){
-    ctx.strokeStyle='#ffd24a'; ctx.lineWidth=3;
-    ctx.beginPath(); ctx.arc(x,y,w.r+10,0,6.28); ctx.stroke();
+    ctx.strokeStyle='#ffd24a'; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.arc(x,y,w.r+4,0,6.28); ctx.stroke();
     const left=Math.max(0,60-Math.floor((performance.now()-w.pendingT)/1000));
     ctx.fillStyle='#ffd24a'; ctx.font='bold 12px sans-serif';
     ctx.fillText('⚡'+left,x,y+w.r+20);
@@ -497,6 +539,11 @@ function updateBagUI(){
     s.className='slot'+(i<bag.length?'':' empty');
     if(i<bag.length){
       s.textContent=bag[i].dex.emoji;
+      // 顯示 lvl/count
+      const st=document.createElement('div');
+      st.style.cssText='position:absolute;top:0;right:2px;font-size:9px;color:#7CFC00;font-weight:bold;text-shadow:0 0 3px #000;';
+      st.textContent='L'+(bag[i].lvl||1)+(bag[i].count&&bag[i].count>1?'×'+bag[i].count:'');
+      s.appendChild(st);
       // 點按 → 放出（離開物品箱）
       s.style.cursor='pointer';
       s.addEventListener('click',()=>togglePet(i));
@@ -625,6 +672,16 @@ function update(dtS){
     }
   }
   updateScoreUI();
+
+  // toast 顯示/消失（3-5 秒）
+  const toastEl=document.getElementById('toast');
+  for(let i=toasts.length-1;i>=0;i--){
+    if(Date.now()-toasts[i].t>toasts[i].dur){
+      toasts.splice(i,1);
+      if(toasts.length===0 && toastEl){ toastEl.style.display='none'; }
+    }
+  }
+  if(toasts.length>0 && toastEl){ toastEl.style.display='block'; toastEl.textContent=toasts[toasts.length-1].msg; }
 }
 
 // ===== 渲染 =====
