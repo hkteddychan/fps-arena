@@ -93,7 +93,6 @@
   <!-- 底部控制（wrap 直接子元素，固定喺最底） -->
   <div id="controls">
     <button id="modeBtn"><span class="btn-icon">🎯</span><span id="modeBtnLbl">模式</span></button>
-    <button id="throwBtn"><span class="btn-icon">🎯</span>掟</button>
     <button id="summonBtn"><span class="btn-icon">🐾</span><span id="summonLbl">召喚</span></button>
   </div>
 </div>
@@ -592,15 +591,30 @@ function update(dtS){
   player.x=Math.max(player.r,Math.min(W-player.r,player.x));
   player.y=Math.max(player.r,Math.min(H-player.r,player.y));
 
-  // 掟球（撳住掟掣）
-  if(throwHold){
-    let tx=player.x+ix*200, ty=player.y+iy*200;
-    if(mag===0){
-      let b=1e9;
-      for(const w of wilds){ const d=Math.hypot(w.x-player.x,w.y-player.y); if(!w.pending&&d<b){b=d;tx=w.x;ty=w.y;} }
-      if(b===1e9){ tx=player.x; ty=player.y-200; }
+  // 行上去自動收服（唔使掟球）
+  for(const w of [...wilds]){
+    if(Math.hypot(w.x-player.x,w.y-player.y) < w.r+player.r+8){
+      // 直接收服（套 lvl up 機制）
+      const sameIdx = bag.findIndex(s=>s.dex.id===w.dex.id);
+      if(sameIdx>=0){
+        const s=bag[sameIdx];
+        s.count=(s.count||0)+1;
+        if(s.count>=5){
+          s.lvl=(s.lvl||1)+1; s.count=0;
+          s.dex={...s.dex, hp:s.dex.hp+5, atk:s.dex.atk+1};
+          s.hp=s.dex.hp; s.mp=s.dex.mp;
+          toastMsg('⬆ '+w.dex.name+' 升到 Lv'+(s.lvl||1)+'!');
+        } else {
+          flashText(w.dex.name+' ×'+s.count,w.x,w.y-30,'#ffd24a');
+        }
+      } else {
+        if(bag.length>=MAX_BAG){ flashText('🎒 滿!',w.x,w.y-30,'#f66'); continue; }
+        bag.push({dex:w.dex,hp:w.dex.hp,mp:w.dex.mp,count:1,lvl:1});
+        flashText('收服!'+w.dex.name+' ✓',w.x,w.y-30,'#ffd24a');
+      }
+      document.getElementById('catchHint').style.display='none';
+      removeWild(w); updateBagUI(); updateScoreUI();
     }
-    throwBall(tx,ty);
   }
 
   // 玩家寵物：控制模式 + 對戰
@@ -698,20 +712,8 @@ function render(){
 }
 
 // ===== 輸入 =====
-document.addEventListener('keydown',e=>{ keys[e.key.toLowerCase()]=true; if(e.key.toLowerCase()===' ') throwHold=true; });
-document.addEventListener('keyup',e=>{ keys[e.key.toLowerCase()]=false; if(e.key.toLowerCase()===' ') throwHold=false; });
-let throwHold=false;
-cv.addEventListener('pointerdown',e=>{
-  if(!playing||over) return;
-  const rect=cv.getBoundingClientRect();
-  const tx=(e.clientX-rect.left)*W/rect.width, ty=(e.clientY-rect.top)*H/rect.height;
-  throwBall(tx,ty);
-});
-const throwBtn=document.getElementById('throwBtn');
-throwBtn.addEventListener('touchstart',e=>{ e.preventDefault(); if(playing&&!over) throwHold=true; });
-throwBtn.addEventListener('touchend',e=>{ e.preventDefault(); throwHold=false; });
-throwBtn.addEventListener('mousedown',e=>{ if(playing&&!over) throwHold=true; });
-throwBtn.addEventListener('mouseup',e=>{ throwHold=false; });
+document.addEventListener('keydown',e=>{ keys[e.key.toLowerCase()]=true; });
+document.addEventListener('keyup',e=>{ keys[e.key.toLowerCase()]=false; });
 
 // 搖桿
 const joy=document.getElementById('joy'), knob=document.getElementById('knob');
