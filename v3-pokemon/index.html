@@ -24,9 +24,9 @@
   #modeBtn { width:84px; height:64px; background:#2d7ff9; }
   #summonBtn { width:84px; height:64px; background:#28a745; }
   /* 物品箱 */
-  #bag { position:absolute; top:6px; right:6px; background:rgba(10,14,26,.82); border-radius:10px; padding:5px 7px; z-index:6; font-size:11px; max-width:44vw; }
+  #bag { position:absolute; top:6px; right:6px; background:rgba(10,14,26,.82); border-radius:10px; padding:5px 7px; z-index:6; font-size:11px; max-width:70vw; max-height:40vh; overflow-y:auto; }
   #bag .title { color:#ffd24a; font-weight:bold; margin-bottom:3px; }
-  #bag .slots { display:flex; gap:3px; flex-wrap:wrap; }
+  #bag .slots { display:grid; grid-template-columns:repeat(5,auto); gap:3px; }
   #bag .slot { width:30px; height:30px; border-radius:7px; background:#26334d; display:flex; align-items:center; justify-content:center; font-size:14px; border:1px solid #3a4d6e; position:relative; }
   #bag .slot.empty { opacity:.3; }
   #bag .slot.active { border-color:#ffd24a; box-shadow:0 0 6px #ffd24a; }
@@ -139,7 +139,7 @@ let playing=false, over=false, started=false;
 let timeLeft=5*60; const GAME_DURATION=5*60;
 let lastT=0, dt=0;
 let joyVec={x:0,y:0}; const keys={};
-let bag=[]; const MAX_BAG=10;           // bag 每格 {dex, hp, mp}（實際狀態）
+let bag=[]; const MAX_BAG=20;           // bag 每格 {dex, hp, mp}（實際狀態）
 let team=[];                             // 已召喚出嚟嘅寵（對應 bag index）
 let flagPt=null;                         // 插旗集合點
 let ctrlMode='follow';
