@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Pokemon Arena (V3)</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  body { background:#1a2238; color:#eef; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang HK',sans-serif; overflow:hidden; height:100vh; touch-action:none; }
+  #wrap { width:100vw; height:100vh; display:flex; flex-direction:column; }
+  #hud { height:64px; background:rgba(10,14,26,.92); display:flex; align-items:center; justify-content:space-between; padding:0 12px; border-bottom:2px solid #2a3a55; z-index:5; }
+  #hud .brand { font-size:16px; font-weight:bold; }
+  #hud .timer { font-size:20px; font-weight:bold; color:#ffd24a; }
+  #hud .score { font-size:14px; }
+  #gamewrap { flex:1; position:relative; }
+  canvas { width:100%; height:100%; display:block; background:#3a8f4f; }
+  /* 虛擬搖桿 */
+  #joy { position:absolute; width:120px; height:120px; border-radius:50%; background:rgba(255,255,255,.12); bottom:16px; left:16px; touch-action:none; display:none; }
+  #joy .knob { position:absolute; width:50px; height:50px; border-radius:50%; background:rgba(255,255,255,.5); left:35px; top:35px; }
+  /* 掟球掣 */
+  #throw { position:absolute; width:84px; height:84px; border-radius:50%; background:radial-gradient(circle,#ff5a3c,#c2300f); border:3px solid #fff; color:#fff; font-weight:bold; font-size:14px; bottom:20px; right:20px; z-index:6; box-shadow:0 4px 12px rgba(0,0,0,.4); display:none; }
+  /* 物品箱 */
+  #bag { position:absolute; top:8px; right:8px; background:rgba(10,14,26,.85); border-radius:10px; padding:6px 8px; z-index:6; font-size:12px; max-width:46vw; }
+  #bag .title { color:#ffd24a; font-weight:bold; margin-bottom:4px; }
+  #bag .slots { display:flex; gap:4px; flex-wrap:wrap; }
+  #bag .slot { width:34px; height:34px; border-radius:8px; background:#26334d; display:flex; align-items:center; justify-content:center; font-size:16px; border:1px solid #3a4d6e; }
+  #bag .slot.empty { opacity:.3; }
+  /* 開始畫面 */
+  #start { position:absolute; inset:0; background:rgba(6,10,20,.9); display:flex; flex-direction:column; align-items:center; justify-content:center; z-index:10; text-align:center; padding:20px; }
+  #start h1 { font-size:30px; margin-bottom:6px; }
+  #start p { color:#9ab; font-size:14px; margin:6px 0; line-height:1.6; max-width:320px; }
+  #start button { background:#2d7ff9; color:#fff; border:none; font-size:20px; font-weight:bold; padding:14px 36px; border-radius:12px; margin-top:16px; }
+  #start button:hover { background:#4a95ff; }
+  #end { position:absolute; inset:0; background:rgba(6,10,20,.9); display:none; flex-direction:column; align-items:center; justify-content:center; z-index:11; text-align:center; }
+  #end h2 { font-size:26px; margin-bottom:10px; }
+  #end .big { font-size:20px; color:#ffd24a; margin:8px 0; }
+  #end button { background:#2d7ff9; color:#fff; border:none; font-size:18px; font-weight:bold; padding:12px 30px; border-radius:12px; margin:10px 6px 0; }
+  .hint { position:absolute; bottom:120px; right:24px; background:rgba(10,14,26,.7); border-radius:8px; padding:6px 10px; font-size:12px; color:#9ab; z-index:6; display:none; }
+</style>
+</head>
+<body>
+<div id="wrap">
+  <div id="hud">
+    <span class="brand">🎮 Pokemon Arena</span>
+    <span class="timer" id="timer">5:00</span>
+    <span class="score" id="score">捕捉 0</span>
+  </div>
+  <div id="gamewrap">
+    <canvas id="cv"></canvas>
+    <div id="joy"><div class="knob" id="knob"></div></div>
+    <button id="throw">🎯 掟</button>
+    <div id="bag">
+      <div class="title">🎒 物品箱 (0/10)</div>
+      <div class="slots" id="slots"></div>
+    </div>
+    <div class="hint" id="hint"></div>
+    <div id="start">
+      <h1>🎮 Pokemon Arena</h1>
+      <p>5 分鐘內掟精靈球捉野生小精靈！<br>掟中會扣 HP，跌到 0 就自動收服入物品箱（10 格）。<br>Pokemon 唔會攻擊你，放心捕捉！</p>
+      <button id="startBtn">▶ 開始</button>
+    </div>
+    <div id="end">
+      <h2>⏱ 時間到！</h2>
+      <div class="big" id="endScore"></div>
+      <div id="endDetail"></div>
+      <button id="againBtn">🔄 再玩一次</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===== Pokemon 圖鑑（10 隻） =====
+// 用 emoji 近似 + 顏色代表，屬性影響收服難度
+const POKEDEX = [
+  {id:1, name:'妙蛙種子', type:'草',   emoji:'🐢', color:'#7ac74f', hp:70, spd:0.9, rarity:2},
+  {id:2, name:'小火龍',   type:'火',   emoji:'🦎', color:'#ee8130', hp:55, spd:1.1, rarity:2},
+  {id:3, name:'車厘龜',   type:'水',   emoji:'🐢', color:'#6390f0', hp:85, spd:0.7, rarity:2},
+  {id:4, name:'皮卡丘',   type:'電',   emoji:'🐭', color:'#f7d02c', hp:50, spd:1.5, rarity:1},
+  {id:5, name:'波波',     type:'飛行', emoji:'🐦', color:'#a8b7c7', hp:45, spd:1.8, rarity:1},
+  {id:6, name:'小拳石',   type:'岩',   emoji:'🪨', color:'#b6a136', hp:90, spd:0.5, rarity:3},
+  {id:7, name:'綠毛蟲',   type:'蟲',   emoji:'🐛', color:'#a6b91a', hp:40, spd:1.2, rarity:0},
+  {id:8, name:'比比鳥',   type:'飛行', emoji:'🦅', color:'#6d8fc7', hp:60, spd:1.3, rarity:2},
+  {id:9, name:'伊布',     type:'普通', emoji:'🦊', color:'#c98b9e', hp:65, spd:1.2, rarity:1},
+  {id:10,name:'鯉魚王',   type:'水',   emoji:'🐟', color:'#f0908c', hp:30, spd:0.8, rarity:0}
+];
+// 稀有度：0=常見易捉 1=普通 2=稀有 3=罕有
+const RARITY_WEIGHT = [0,0,0,0,1,1,2,2,3]; // 生成時抽稀有度
+
+const cv = document.getElementById('cv');
+const ctx = cv.getContext('2d');
+let W=0,H=0;
+function resize(){
+  W = cv.width = document.getElementById('gamewrap').clientWidth;
+  H = cv.height = document.getElementById('gamewrap').clientHeight;
+}
+resize();
+window.addEventListener('resize', resize);
+
+// ===== 遊戲狀態 =====
+let playing=false, over=false;
+let timeLeft=5*60;          // 5 分鐘
+let score=0;                 // 捕捉數
+let catchCount=0;
+let totalCaptured=0;
+let lastT=0, dt=0;
+const GAME_DURATION=5*60;
+
+// 玩家
+const player = { x:0, y:0, r:16, hp:100, vx:0, vy:0, spd:220, spawnT:0 };
+// 搖桿輸入
+let joyVec={x:0,y:0};
+// 野生 Pokemon
+let wilds=[];
+// 掟出嘅精靈球
+let balls=[];
+// 已捕捉（物品箱，10 格）
+let bag=[];
+const MAX_BAG=10;
+
+// ===== 生成 =====
+function spawnWild(limit){
+  // 控制總數
+  const MAX_WILD = Math.max(6, Math.floor(W*H/18000));
+  while(wilds.length<limit && wilds.length<MAX_WILD){
+    // 抽稀有度再揀對應 Pokemon
+    let rar = RARITY_WEIGHT[Math.floor(Math.random()*RARITY_WEIGHT.length)];
+    let cand = POKEDEX.filter(p=>p.rarity===rar);
+    const p = cand[Math.floor(Math.random()*cand.length)];
+    wilds.push({
+      dex:p, x: 40+Math.random()*(W-80), y: 40+Math.random()*(H-80),
+      hp:p.hp, maxHp:p.hp, r:22,
+      dir:Math.random()*Math.PI*2,
+      roamT:0, caught:false
+    });
+  }
+}
+function spawnNPCs(n){
+  for(let i=0;i<n;i++){
+    npcs.push({
+      x:40+Math.random()*(W-80), y:40+Math.random()*(H-80), r:16,
+      color:['#ff6b6b','#6bc0ff','#ffd24a'][i%3],
+      vx:0,vy:0,spd:120,throwT:0,bag:[],
+      name:'對手'+ (i+1)
+    });
+  }
+}
+
+// ===== 掟精靈球 =====
+function throwBall(tx,ty){
+  // 無限球，拋物線飛向目標
+  const dx=tx-player.x, dy=ty-player.y;
+  const dist=Math.hypot(dx,dy);
+  const speed=Math.min(700, dist*6);
+  balls.push({
+    x:player.x, y:player.y, vx:dx/dist*speed, vy:dy/dist*speed,
+    r:9, life:1.5, targetTx:tx, targetTy:ty, arc:Math.random()*Math.PI*2
+  });
+  player.spawnT=performance.now();
+}
+
+// ===== 收服 =====
+function tryCatch(w){
+  if(w.caught) return false;
+  if(bag.length>=MAX_BAG) return false;   // 物品箱滿
+  w.caught=true;
+  bag.push(w.dex);
+  score++;
+  catchCount++;
+  totalCaptured++;
+  updateBagUI();
+  // 效果
+  flashText('收服！'+w.dex.name+' ✓', w.x, w.y-30, '#ffd24a');
+  return true;
+}
+let flashMsgs=[];
+function flashText(msg,x,y,color){
+  flashMsgs.push({msg,x,y,color,t:performance.now(),life:1.4});
+}
+
+// ===== 碰撞 =====
+function collideBall(b){
+  for(const w of wilds){
+    if(w.caught) continue;
+    const d=Math.hypot(b.x-w.x, b.y-w.y);
+    if(d < b.r+w.r){
+      // 掟中：扣 HP（每球固定傷害 = 15）
+      w.hp -= 15;
+      w.dir = Math.random()*Math.PI*2;
+      w.hitT=performance.now();
+      flashText('-15', w.x, w.y-34, '#ff5a5a');
+      // 收球
+      b.hit=true;
+      if(w.hp<=0){ tryCatch(w); }
+      return;
+    }
+  }
+}
+
+// ===== NPC AI =====
+function updateNPC(n,dt){
+  // 移動向最近野怪
+  let target=null, best=1e9;
+  for(const w of wilds){
+    if(w.caught) continue;
+    const d=Math.hypot(n.x-w.x, n.y-w.y);
+    if(d<best){best=d;target=w;}
+  }
+  if(target && best>70){
+    const a=Math.atan2(target.y-n.y, target.x-n.x);
+    n.vx=Math.cos(a)*n.spd; n.vy=Math.sin(a)*n.spd;
+  } else { n.vx=0; n.vy=0; }
+  // 掟球
+  n.throwT-=dt;
+  if(target && best<180 && n.throwT<=0){
+    n.throwT=1.0+Math.random();
+    // NPC 掟球（都用無限球，但有成功率）
+    const dx=target.x-n.x, dy=target.y-n.y;
+    const dist=Math.hypot(dx,dy);
+    const speed=Math.min(600, dist*5);
+    balls.push({x:n.x,y:n.y,vx:dx/dist*speed,vy:dy/dist*speed,r:9,life:1.5,owner:n,npc:true});
+  }
+  n.x+=n.vx*dt; n.y+=n.vy*dt;
+  n.x=Math.max(20,Math.min(W-20,n.x));
+  n.y=Math.max(20,Math.min(H-20,n.y));
+}
+
+// ===== 繪圖 =====
+function drawGrass(){
+  ctx.fillStyle='#3a8f4f';
+  ctx.fillRect(0,0,W,H);
+  for(let i=0;i<120;i++){
+    const gx=Math.random()*W, gy=Math.random()*H;
+    ctx.fillStyle='rgba(90,160,70,.25)';
+    ctx.beginPath(); ctx.ellipse(gx,gy,10+Math.random()*14,6+Math.random()*8,Math.random()*3.14,0,6.28); ctx.fill();
+  }
+}
+function drawWild(w){
+  const flash = w.hitT && (performance.now()-w.hitT)<150;
+  const x=w.x, y=w.y;
+  ctx.fillStyle=w.dex.color; ctx.globalAlpha=0.15;
+  ctx.beginPath(); ctx.arc(x,y,w.r+6,0,6.28); ctx.fill();
+  ctx.globalAlpha=1;
+  if(flash) ctx.filter='brightness(1.8)';
+  ctx.font=(w.r*1.4)+'px serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillText(w.dex.emoji, x, y);
+  ctx.filter='none';
+  const bw=40,bh=5,ratio=Math.max(0,w.hp/w.maxHp);
+  ctx.fillStyle='#333'; ctx.fillRect(x-bw/2,y-w.r-14,bw,bh);
+  ctx.fillStyle=ratio>0.5?'#4caf50':(ratio>0.25?'#ffc107':'#f44336');
+  ctx.fillRect(x-bw/2,y-w.r-14,bw*ratio,bh);
+  ctx.font='10px sans-serif'; ctx.fillStyle='#eef';
+  ctx.fillText(w.dex.name, x, y-w.r-18);
+}
+function drawPlayer(){
+  ctx.fillStyle='#4a95ff';
+  ctx.beginPath(); ctx.arc(player.x,player.y,player.r,0,6.28); ctx.fill();
+  ctx.fillStyle='#fff'; ctx.font='16px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillText('🧑', player.x, player.y);
+  const a=Math.atan2(joyVec.y,joyVec.x);
+  ctx.strokeStyle='rgba(255,255,255,.5)'; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.moveTo(player.x,player.y); ctx.lineTo(player.x+Math.cos(a)*28,player.y+Math.sin(a)*28); ctx.stroke();
+}
+function drawNPC(n){
+  ctx.fillStyle=n.color;
+  ctx.beginPath(); ctx.arc(n.x,n.y,n.r,0,6.28); ctx.fill();
+  ctx.fillStyle='#fff'; ctx.font='16px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillText('👤', n.x, n.y);
+}
+function drawBall(b){
+  const t=performance.now();
+  const arcY=Math.sin((t/80)%Math.PI)*-8;
+  ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(b.x,b.y+arcY,b.r,0,6.28); ctx.fill();
+  ctx.fillStyle='#c2300f'; ctx.beginPath(); ctx.arc(b.x,b.y+arcY,b.r*0.55,0,6.28); ctx.fill();
+  ctx.strokeStyle='#333'; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(b.x,b.y+arcY,b.r,0,6.28); ctx.stroke();
+}
+function drawFlash(){
+  const now=performance.now();
+  for(let i=flashMsgs.length-1;i>=0;i--){
+    const f=flashMsgs[i]; const age=(now-f.t)/1000;
+    if(age>f.life){ flashMsgs.splice(i,1); continue; }
+    ctx.globalAlpha=1-age/f.life;
+    ctx.fillStyle=f.color; ctx.font='bold 15px sans-serif'; ctx.textAlign='center';
+    ctx.fillText(f.msg, f.x, f.y-age*20); ctx.globalAlpha=1;
+  }
+}
+
+// ===== UI =====
+function updateTimerUI(){
+  const m=Math.floor(timeLeft/60), s=Math.floor(timeLeft%60);
+  document.getElementById('timer').textContent=m+':'+(s<10?'0':'')+s;
+}
+function updateScoreUI(){ document.getElementById('score').textContent='捕捉 '+score; }
+function updateBagUI(){
+  document.getElementById('bag').querySelector('.title').textContent='🎒 物品箱 ('+bag.length+'/'+MAX_BAG+')';
+  const slots=document.getElementById('slots');
+  slots.innerHTML='';
+  for(let i=0;i<MAX_BAG;i++){
+    const s=document.createElement('div');
+    s.className='slot'+(i<bag.length?'':' empty');
+    if(i<bag.length) s.textContent=bag[i].emoji;
+    slots.appendChild(s);
+  }
+}
+
+// ===== 更新 =====
+function update(dtS){
+  if(over) return;
+  timeLeft-=dtS;
+  if(timeLeft<=0){ timeLeft=0; endGame(); return; }
+  updateTimerUI();
+
+  // 玩家移動（鍵盤 + 搖桿）
+  const mvx = (keys['arrowright']||keys['d']?1:0) - (keys['arrowleft']||keys['a']?1:0);
+  const mvy = (keys['arrowdown']||keys['s']?1:0) - (keys['arrowup']||keys['w']?1:0);
+  let ix = (mvx||mvy) ? mvx : joyVec.x;
+  let iy = (mvx||mvy) ? mvy : joyVec.y;
+  const mag=Math.hypot(ix,iy);
+  if(mag>1){ ix/=mag; iy/=mag; }
+  player.x+=ix*player.spd*dtS;
+  player.y+=iy*player.spd*dtS;
+  player.x=Math.max(player.r,Math.min(W-player.r,player.x));
+  player.y=Math.max(player.r,Math.min(H-player.r,player.y));
+
+  // 撳住掟掣持續掟
+  if(throwHold){
+    let tx=player.x+ix*200, ty=player.y+iy*200;
+    if(mag===0){
+      let best=1e9;
+      for(const w of wilds){ if(w.caught)continue; const d=Math.hypot(w.x-player.x,w.y-player.y); if(d<best){best=d;tx=w.x;ty=w.y;} }
+      if(best===1e9){ tx=player.x; ty=player.y-200; }
+    }
+    throwBall(tx,ty);
+  }
+
+  // 野生 Pokemon 徘徊（唔攻擊）
+  for(const w of wilds){
+    if(w.caught) continue;
+    w.roamT-=dtS;
+    if(w.roamT<=0){ w.roamT=1.5+Math.random()*2.5; w.dir=Math.random()*Math.PI*2; }
+    w.x+=Math.cos(w.dir)*w.dex.spd*20*dtS;
+    w.y+=Math.sin(w.dir)*w.dex.spd*20*dtS;
+    w.x=Math.max(20,Math.min(W-20,w.x));
+    w.y=Math.max(20,Math.min(H-20,w.y));
+  }
+  // 補充野怪
+  const MAX_WILD = Math.max(6, Math.floor(W*H/18000));
+  while(wilds.length<MAX_WILD){
+    let rar=RARITY_WEIGHT[Math.floor(Math.random()*RARITY_WEIGHT.length)];
+    let cand=POKEDEX.filter(p=>p.rarity===rar);
+    const p=cand[Math.floor(Math.random()*cand.length)];
+    wilds.push({dex:p,x:40+Math.random()*(W-80),y:40+Math.random()*(H-80),hp:p.hp,maxHp:p.hp,r:22,dir:Math.random()*Math.PI*2,roamT:0,caught:false});
+  }
+
+  // NPC
+  for(const n of npcs) updateNPC(n,dtS);
+
+  // 精靈球
+  for(let i=balls.length-1;i>=0;i--){
+    const b=balls[i];
+    b.x+=b.vx*dtS; b.y+=b.vy*dtS; b.life-=dtS;
+    if(b.life<=0){ balls.splice(i,1); continue; }
+    collideBall(b);
+    if(b.hit) balls.splice(i,1);
+  }
+}
+
+// ===== 渲染 =====
+function render(){
+  drawGrass();
+  for(const w of wilds){ if(!w.caught) drawWild(w); }
+  for(const n of npcs) drawNPC(n);
+  for(const b of balls) drawBall(b);
+  drawPlayer();
+  drawFlash();
+}
+
+// ===== 輸入 =====
+const keys={};
+document.addEventListener('keydown',e=>{ keys[e.key.toLowerCase()]=true; if(e.key.toLowerCase()===' ') throwHold=true; });
+document.addEventListener('keyup',e=>{ keys[e.key.toLowerCase()]=false; if(e.key.toLowerCase()===' ') throwHold=false; });
+
+let throwHold=false;
+// 點擊 canvas 掟向該點
+cv.addEventListener('pointerdown',e=>{
+  if(!playing||over) return;
+  const rect=cv.getBoundingClientRect();
+  const tx=(e.clientX-rect.left)*W/rect.width;
+  const ty=(e.clientY-rect.top)*H/rect.height;
+  throwBall(tx,ty);
+});
+const throwBtn=document.getElementById('throw');
+throwBtn.addEventListener('touchstart',e=>{ e.preventDefault(); if(playing&&!over) throwHold=true; });
+throwBtn.addEventListener('touchend',e=>{ e.preventDefault(); throwHold=false; });
+throwBtn.addEventListener('mousedown',e=>{ if(playing&&!over) throwHold=true; });
+throwBtn.addEventListener('mouseup',e=>{ throwHold=false; });
+
+// 虛擬搖桿（手機）
+const joy=document.getElementById('joy'), knob=document.getElementById('knob');
+function setupJoyUI(){
+  if('ontouchstart' in window){
+    joy.style.display='block'; throwBtn.style.display='block';
+    document.getElementById('hint').style.display='block';
+    document.getElementById('hint').textContent='左: 搖桿移動 · 右: 掟精靈球';
+  }
+}
+joy.addEventListener('touchstart',e=>{ e.preventDefault(); joyId=e.touches[0].identifier; updateJoy(e.touches[0]); });
+joy.addEventListener('touchmove',e=>{ e.preventDefault(); for(const t of e.touches){ if(t.identifier===joyId) updateJoy(t); } });
+joy.addEventListener('touchend',()=>{ joyVec={x:0,y:0}; knob.style.left='35px'; knob.style.top='35px'; joyId=null; });
+joy.addEventListener('touchcancel',()=>{ joyVec={x:0,y:0}; knob.style.left='35px'; knob.style.top='35px'; joyId=null; });
+let joyId=null;
+function updateJoy(t){
+  const rect=joy.getBoundingClientRect();
+  const cx=rect.left+rect.width/2, cy=rect.top+rect.height/2;
+  let dx=t.clientX-cx, dy=t.clientY-cy;
+  const max=rect.width/2-25;
+  const m=Math.hypot(dx,dy);
+  if(m>max){ dx=dx/m*max; dy=dy/m*max; }
+  knob.style.left=(dx+max)+'px'; knob.style.top=(dy+max)+'px';
+  joyVec={x:dx/max, y:dy/max};
+}
+
+// ===== 開始/結束 =====
+function startGame(){
+  playing=true; over=false;
+  timeLeft=GAME_DURATION; score=0; catchCount=0;
+  bag=[]; wilds=[]; balls=[]; flashMsgs=[];
+  player.x=W/2; player.y=H/2;
+  npcs=[]; spawnNPCs(3);
+  updateBagUI(); updateScoreUI(); updateTimerUI();
+  document.getElementById('start').style.display='none';
+  document.getElementById('end').style.display='none';
+  lastT=performance.now();
+  requestAnimationFrame(loop);
+}
+function endGame(){
+  over=true; playing=false;
+  document.getElementById('endScore').textContent='捉到 '+score+' 隻';
+  const types=new Set(bag.map(p=>p.type)).size;
+  document.getElementById('endDetail').innerHTML='🎒 物品箱: '+bag.length+'/'+MAX_BAG+'<br>🧬 種類: '+types+' 種';
+  document.getElementById('end').style.display='flex';
+}
+function loop(t){
+  dt=(t-lastT)/1000; lastT=t;
+  if(dt>0.1) dt=0.1;
+  update(dt);
+  render();
+  if(!over) requestAnimationFrame(loop);
+}
+document.getElementById('startBtn').addEventListener('click',startGame);
+document.getElementById('againBtn').addEventListener('click',()=>{ document.getElementById('end').style.display='none'; startGame(); });
+setupJoyUI();
+render();
+</script>
+</body>
+</html>
+
