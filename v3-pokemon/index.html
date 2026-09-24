@@ -112,16 +112,16 @@
 // ===== Pokemon 圖鑑（10 隻，完整 stats） =====
 // hp/mp/攻/速/攻擊方法/技能，稀有度 0常見→3罕有
 const POKEDEX = [
-  {id:1, name:'妙蛙種子', type:'草',  emoji:'🐢', color:'#7ac74f', hp:60, mp:40, atk:10, atkSpd:1.4, skill:{name:'藤鞭',mp:10,atk:22,range:150,effect:'snare'}, rarity:2},
-  {id:2, name:'小火龍',   type:'火',  emoji:'🦎', color:'#ee8130', hp:55, mp:36, atk:12, atkSpd:1.3, skill:{name:'火焰噴射',mp:12,atk:26,range:160,effect:'burn'}, rarity:2},
-  {id:3, name:'車厘龜',   type:'水',  emoji:'🐢', color:'#6390f0', hp:80, mp:44, atk:8,  atkSpd:1.8, skill:{name:'水炮',mp:8,atk:18,range:150,effect:'knockback'}, rarity:2},
-  {id:4, name:'皮卡丘',   type:'電',  emoji:'🐭', color:'#f7d02c', hp:45, mp:50, atk:14, atkSpd:0.7, skill:{name:'十萬伏特',mp:15,atk:28,range:170,effect:'chain'}, rarity:1},
-  {id:5, name:'波波',     type:'飛行',emoji:'🐦', color:'#a8b7c7', hp:40, mp:28, atk:7,  atkSpd:0.6, skill:{name:'烈暴風',mp:6,atk:15,range:130,effect:'aoe'}, rarity:1},
-  {id:6, name:'小拳石',   type:'岩',  emoji:'🪨', color:'#b6a136', hp:95, mp:34, atk:15, atkSpd:2.2, skill:{name:'滾石',mp:15,atk:32,range:160,effect:'heavy'}, rarity:3},
-  {id:7, name:'綠毛蟲',   type:'蟲',  emoji:'🐛', color:'#a6b91a', hp:30, mp:20, atk:4,  atkSpd:2.0, skill:{name:'吐絲',mp:5,atk:8,range:120,effect:'slow'}, rarity:0},
-  {id:8, name:'比比鳥',   type:'飛行',emoji:'🦅', color:'#6d8fc7', hp:65, mp:32, atk:11, atkSpd:1.0, skill:{name:'翅膀攻擊',mp:10,atk:22,range:140,effect:'strike'}, rarity:2},
-  {id:9, name:'伊布',     type:'普通',emoji:'🦊', color:'#c98b9e', hp:50, mp:40, atk:9,  atkSpd:1.2, skill:{name:'電光一閃',mp:8,atk:20,range:150,effect:'dash'}, rarity:1},
-  {id:10,name:'鯉魚王',   type:'水',  emoji:'🐟', color:'#f0908c', hp:20, mp:15, atk:2,  atkSpd:2.5, skill:{name:'水濺',mp:3,atk:5,range:100,effect:'splash'}, rarity:0}
+  {id:1, name:'妙蛙種子', type:'草',  emoji:'🐢', color:'#7ac74f', hp:60, mp:40, atk:10, atkSpd:1.4, skill:{name:'藤鞭',mp:10,atk:22,range:150,effect:'snare'}, skill2:{name:'飛葉快刀',mp:12,atk:20,range:170,effect:'aoe'}, rarity:2},
+  {id:2, name:'小火龍',   type:'火',  emoji:'🦎', color:'#ee8130', hp:55, mp:36, atk:12, atkSpd:1.3, skill:{name:'火焰噴射',mp:12,atk:26,range:160,effect:'burn'}, skill2:{name:'火苗',mp:8,atk:14,range:120,effect:'burn'}, rarity:2},
+  {id:3, name:'車厘龜',   type:'水',  emoji:'🐢', color:'#6390f0', hp:80, mp:44, atk:8,  atkSpd:1.8, skill:{name:'水炮',mp:8,atk:18,range:150,effect:'knockback'}, skill2:{name:'泡沫光線',mp:10,atk:20,range:160,effect:'slow'}, rarity:2},
+  {id:4, name:'皮卡丘',   type:'電',  emoji:'🐭', color:'#f7d02c', hp:45, mp:50, atk:14, atkSpd:0.7, skill:{name:'十萬伏特',mp:15,atk:28,range:170,effect:'chain'}, skill2:{name:'電光一閃',mp:6,atk:12,range:90,effect:'strike'}, rarity:1},
+  {id:5, name:'波波',     type:'飛行',emoji:'🐦', color:'#a8b7c7', hp:40, mp:28, atk:7,  atkSpd:0.6, skill:{name:'烈暴風',mp:6,atk:15,range:130,effect:'aoe'}, skill2:{name:'啄擊',mp:4,atk:10,range:80,effect:'strike'}, rarity:1},
+  {id:6, name:'小拳石',   type:'岩',  emoji:'🪨', color:'#b6a136', hp:95, mp:34, atk:15, atkSpd:2.2, skill:{name:'滾石',mp:15,atk:32,range:160,effect:'heavy'}, skill2:{name:'岩石爆破',mp:12,atk:22,range:150,effect:'aoe'}, rarity:3},
+  {id:7, name:'綠毛蟲',   type:'蟲',  emoji:'🐛', color:'#a6b91a', hp:30, mp:20, atk:4,  atkSpd:2.0, skill:{name:'吐絲',mp:5,atk:8,range:120,effect:'slow'}, skill2:{name:'撞擊',mp:3,atk:8,range:70,effect:'strike'}, rarity:0},
+  {id:8, name:'比比鳥',   type:'飛行',emoji:'🦅', color:'#6d8fc7', hp:65, mp:32, atk:11, atkSpd:1.0, skill:{name:'翅膀攻擊',mp:10,atk:22,range:140,effect:'strike'}, skill2:{name:'烈暴風',mp:8,atk:14,range:120,effect:'aoe'}, rarity:2},
+  {id:9, name:'伊布',     type:'普通',emoji:'🦊', color:'#c98b9e', hp:50, mp:40, atk:9,  atkSpd:1.2, skill:{name:'電光一閃',mp:8,atk:20,range:150,effect:'dash'}, skill2:{name:'撞擊',mp:4,atk:10,range:80,effect:'strike'}, rarity:1},
+  {id:10,name:'鯉魚王',   type:'水',  emoji:'🐟', color:'#f0908c', hp:20, mp:15, atk:2,  atkSpd:2.5, skill:{name:'水濺',mp:3,atk:5,range:100,effect:'splash'}, skill2:{name:'躍起',mp:2,atk:4,range:60,effect:'strike'}, rarity:0}
 ];
 const STARTERS=[4,9,1]; // 皮卡丘/伊布/妙蛙種子 初始三選一
 const RARITY_WEIGHT=[0,0,0,0,1,1,2,2,3];
@@ -138,6 +138,24 @@ const TYPE_CHART={
   普通:{草:1,火:1,水:1,電:1,飛行:1,岩:0.5,蟲:1,普通:1}
 };
 function typeMult(att,def){ return (TYPE_CHART[att]&&TYPE_CHART[att][def])||1; }
+
+// ===== 進階 Lv 成長表 =====
+// 每隻同一款捉夠5隻升一級, Lv1-5 唔同成長
+function applyLevelUp(s, name, x, y){
+  const lv=(s.lvl||1)+1;
+  s.lvl=lv; s.count=0;
+  const d=s.dex;
+  let msg='⬆ '+name+' 升到 Lv'+lv;
+  switch(lv){
+    case 2: d.hp+=8; d.atk+=2; flashText('攻+2 HP+8',x,y-30,'#7CFC00'); break;
+    case 3: d.hp+=12; if(d.skill2){ d.skill=d.skill2; msg+=' 解鎖'+d.skill2.name; } flashText('解鎖第2技能:'+(d.skill2?d.skill2.name:'')+'!',x,y-30,'#ffd24a'); break;
+    case 4: d.atk+=3; d.spdUp=true; flashText('攻+3 攻速+',x,y-30,'#7CFC00'); break;
+    case 5: d.aoE=true; msg+=' 群攻解鎖'; flashText('解鎖群攻!',x,y-30,'#ff6b6b'); break;
+    default: d.hp+=6; d.atk+=1;
+  }
+  s.hp=d.hp; s.mp=d.mp;
+  toastMsg(msg);
+}
 
 // ===== DOM =====
 const cv=document.getElementById('cv'), ctx=cv.getContext('2d');
@@ -157,7 +175,7 @@ let ctrlMode='follow';
 let dropBalls=[];                        // 死咗跌出嚟嘅精靈球（原玩家執返）
 const player={x:0,y:0,r:16,spd:220};
 let wilds=[], balls=[], npcs=[], flashMsgs=[];
-let wins=0, losses=0;
+let wins=0, losses=0, winBonus=0, npcBoost=0;
 
 // ===== 工具 =====
 function flashText(msg,x,y,color){ flashMsgs.push({msg,x,y,color,t:performance.now(),life:1.4}); }
@@ -238,11 +256,7 @@ function tryCatch(w, owner){
       const s=bag[sameIdx];
       s.count=(s.count||0)+1;
       if(s.count>=5){
-        s.lvl=(s.lvl||1)+1; s.count=0;
-        // 升 lvl 強寵（+HP/攻/速）
-        s.dex={...s.dex, hp:s.dex.hp+5, atk:s.dex.atk+1};
-        s.hp=s.dex.hp; s.mp=s.dex.mp;
-        toastMsg('⬆ '+w.dex.name+' 升到 Lv'+(s.lvl||1)+'!');
+        applyLevelUp(s, w.dex.name, w.x, w.y);
       } else {
         flashText(w.dex.name+' ×'+s.count,w.x,w.y-30,'#ffd24a');
       }
@@ -264,11 +278,8 @@ function tryCatch(w, owner){
       const s=bag[sameIdx];
       s.count=(s.count||0)+1;
       if(s.count>=5){
-        s.lvl=(s.lvl||1)+1; s.count=0;
-        s.dex={...s.dex, hp:s.dex.hp+5, atk:s.dex.atk+1};
-        s.hp=s.dex.hp; s.mp=s.dex.mp;
-        toastMsg('⬆ '+w.dex.name+' 升到 Lv'+(s.lvl||1)+'!');
-      } else {
+          applyLevelUp(s, w.dex.name, w.x, w.y);
+        } else {
         flashText(w.dex.name+' ×'+s.count,w.x,w.y-30,'#ffd24a');
       }
     } else {
@@ -320,7 +331,7 @@ function summonPet(bi){
   const d=bag[bi].dex;
   // 由袋移走（放出 = 離開箱）
   const [slot]=bag.splice(bi,1);
-  pets.push({bi:-1, dex:d, hp:slot.hp, mp:slot.mp, x:player.x+(Math.random()*40-20), y:player.y+(Math.random()*40-20), atkCd:0, skillCd:0});
+  pets.push({bi:-1, dex:d, lvl:slot.lvl||1, hp:slot.hp, mp:slot.mp, x:player.x+(Math.random()*40-20), y:player.y+(Math.random()*40-20), atkCd:0, skillCd:0});
   flashText('出戰!'+d.name,player.x,player.y-40,'#7CFC00');
   updateBagUI();
 }
@@ -368,8 +379,9 @@ function petFight(p,dt,ownerFlag){
   // 行向 target
   petMoveToward(p,target.x,target.y,dt);
   p.atkCd-=dt;
+  const atkInterval = (p.dex.spdUp? p.dex.atkSpd*0.75 : p.dex.atkSpd);  // Lv4 攻速+
   if(p.atkCd<=0 && Math.hypot(target.x-p.x,target.y-p.y)<p.dex.skill.range){
-    p.atkCd=p.dex.atkSpd;
+    p.atkCd=atkInterval;
     const mult=target.dex?typeMult(p.dex.type,target.dex.type):1;
     const aa=p.dex.atk*mult;
     if(!enemyIsWild){
@@ -378,12 +390,28 @@ function petFight(p,dt,ownerFlag){
       p.mp=Math.min(p.dex.mp,p.mp+2);   // 攻擊回MP
       flashText('-'+Math.round(aa),target.x,target.y-28,'#ff5a5a');
       target.hitT=performance.now();
-      if(target.hp<=0){ flashText('擊敗!'+target.dex.name,target.x,target.y-30,'#7CFC00'); onPetDown(target); wins++; }
+      if(target.hp<=0){ // 擊敗高Lv NPC寵 → 加分
+        const bonus = (target.lvl||1)>1 ? (target.lvl||1)*10 : 0;
+        if(bonus>0){ wins++; flashText('擊敗Lv'+target.lvl+'! +'+bonus+'分',target.x,target.y-46,'#ffd24a'); winBonus+=bonus; toastMsg('⚔ 擊敗Lv'+(target.lvl||1)+' NPC寵, +'+bonus+'分!'); }
+        else { wins++; }
+        flashText('擊敗!'+target.dex.name,target.x,target.y-30,'#7CFC00');
+        onPetDown(target);
+      }
     } else {
-      // 中立怪：只磨到 HP1
+      // 中立怪：只磨到 HP1（Lv5 群攻打附近其他怪）
       target.hp=Math.max(1,target.hp-aa);
       flashText('-'+Math.round(aa),target.x,target.y-28,'#fff');
       if(target.hp<=1){ target.pending=true; target.pendingT=performance.now(); pendingCount++; }
+      if(p.dex.aoE){
+        for(const w of wilds){
+          if(w===target||w.pending||w.hp<=1) continue;
+          if(Math.hypot(w.x-target.x,w.y-target.y)<100){
+            w.hp=Math.max(1,w.hp-aa*0.5);
+            flashText('-'+Math.round(aa*0.5),w.x,w.y-28,'#fff');
+            if(w.hp<=1){ w.pending=true; w.pendingT=performance.now(); pendingCount++; }
+          }
+        }
+      }
     }
   }
   return hasTarget;
@@ -402,12 +430,20 @@ function spawnNPCs(n){
   npcs=[];
   const colors=['#ff6b6b','#6bc0ff','#ffd24a'];
   for(let i=0;i<n;i++){
+    // NPC 有唔同強度層級(難度越高,初始寵越勁)
+    const tier=[1,2,3][i%3];   // 3個NPC 由易到難
     npcs.push({
       x:50+Math.random()*(W-100), y:40+Math.random()*(H-150), r:16,
       color:colors[i%3], name:'對手'+(i+1),
-      spd:110, throwT:0, pets:[], bag:[], ctrl:'random',
-      stun:0
+      spd:110, throwT:0, pets:[], bag:[],
+      ctrl:'random', stun:0,
+      tier:tier, lvl:tier,
+      // 高難度 NPC 開局已有強寵
+      atkMod:1+ (tier-1)*0.4, hpMod:1+ (tier-1)*0.3
     });
+    // 開局派強寵俾 N
+    const starter = tier>=3 ? POKEDEX[5] : (tier===2? POKEDEX[4] : POKEDEX[6]); // 小拳石/皮卡丘/綠毛蟲
+    npcs[i].bag.push({dex:{...starter, lvl:starter&&starter.lvl?starter.lvl:tier, hp:Math.round(starter.hp*npcs[i].hpMod), atk:Math.round(starter.atk*npcs[i].atkMod)}, hp:starter.hp*npcs[i].hpMod, mp:starter.mp});
   }
 }
 function updateNPC(n,dt){
@@ -430,7 +466,7 @@ function updateNPC(n,dt){
   // NPC 有寵就出戰（自動召喚）
   if(n.pets.length===0 && n.bag.length>0 && n.bag[0].hp>=n.bag[0].dex.hp){
     const d=n.bag.shift();
-    const pet={bi:-1,dex:d.dex,hp:d.hp,mp:d.mp,x:n.x+10,y:n.y+10,atkCd:0,ownerNpc:n};
+    const pet={bi:-1,dex:d.dex,hp:d.hp,mp:d.mp,x:n.x+10,y:n.y+10,atkCd:0,lvl:d.lvl||n.lvl||1,ownerNpc:n};
     n.pets.push(pet);
   }
   // 寵物打玩家寵/中立怪
@@ -483,6 +519,15 @@ function drawPet(p){
   ctx.beginPath(); ctx.arc(x,y,16,0,6.28); ctx.fill(); ctx.globalAlpha=1;
   ctx.font='22px serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
   ctx.fillText(p.dex.emoji,x,y);
+  // 屬性標籤（頭上）
+  ctx.font='9px sans-serif'; ctx.fillStyle='#eef'; ctx.textBaseline='alphabetic';
+  ctx.fillText(p.dex.type, x, y-30);
+  // Lv 標籤
+  if(p.lvl && p.lvl>1){
+    ctx.fillStyle='#ffd24a'; ctx.font='bold 9px sans-serif';
+    ctx.fillText('Lv'+p.lvl, x, y+28);
+  }
+  ctx.textBaseline='middle';
   // HP bar
   const bw=30,bh=4,ratio=Math.max(0,p.hp/p.dex.hp);
   ctx.fillStyle='#333'; ctx.fillRect(x-bw/2,y-26,bw,bh);
@@ -611,10 +656,7 @@ function update(dtS){
         const s=bag[sameIdx];
         s.count=(s.count||0)+1;
         if(s.count>=5){
-          s.lvl=(s.lvl||1)+1; s.count=0;
-          s.dex={...s.dex, hp:s.dex.hp+5, atk:s.dex.atk+1};
-          s.hp=s.dex.hp; s.mp=s.dex.mp;
-          toastMsg('⬆ '+w.dex.name+' 升到 Lv'+(s.lvl||1)+'!');
+          applyLevelUp(s, w.dex.name, w.x, w.y);
         } else {
           flashText(w.dex.name+' ×'+s.count,w.x,w.y-30,'#ffd24a');
         }
@@ -661,6 +703,17 @@ function update(dtS){
   if(pendingCount>0) document.getElementById('catchHint').style.display='block';
   else document.getElementById('catchHint').style.display='none';
   fillWilds();
+
+  // NPC 時間推進變強：每 60 秒 NPC 寵升一級（封頂 Lv5）
+  const elapsed=GAME_DURATION-timeLeft;
+  const newBoost=Math.min(4, Math.floor(elapsed/60));
+  if(newBoost>npcBoost){
+    npcBoost=newBoost;
+    for(const n of npcs){
+      if(n.lvl<5){ n.lvl=Math.min(5,n.lvl+newBoost); n.atkMod=1+(n.tier-1)*0.4+(n.lvl-1)*0.15; n.hpMod=1+(n.tier-1)*0.3+(n.lvl-1)*0.1; }
+      for(const p of n.pets){ if(p.lvl<5){ p.lvl++; toastMsg('⚠️ '+n.name+' 寵升到 Lv'+p.lvl+'!'); } }
+    }
+  }
 
   // NPC
   for(const n of npcs) updateNPC(n,dtS);
@@ -764,7 +817,8 @@ document.getElementById('summonBtn').addEventListener('click',()=>{
 function startGame(){
   resize();  // 確保 W/H 有效
   playing=true; over=false;
-  timeLeft=GAME_DURATION; wins=0; losses=0;
+  timeLeft=GAME_DURATION; wins=0; losses=0; winBonus=0;
+  npcBoost=0;
   wilds=[]; balls=[]; npcs=[]; pets=[]; dropBalls=[]; flashMsgs=[];
   flagPt=null; ctrlMode='follow'; setMode('follow');
   player.x=W/2; player.y=H/2;
@@ -780,9 +834,9 @@ function startGame(){
 }
 function endGame(){
   over=true; playing=false;
-  const score=bag.length*10 + new Set(bag.map(p=>p.dex.type)).size*25 + wins*30 - losses*5;
+  const score=bag.length*10 + new Set(bag.map(p=>p.dex.type)).size*25 + wins*30 + winBonus - losses*5;
   const finalScore=Math.max(0,score);
-  document.getElementById('endScore').textContent='總分 '+finalScore;
+  document.getElementById('endScore').textContent='總分 '+finalScore+(winBonus>0?' (+'+winBonus+' NPC加成)':'');
   const types=new Set(bag.map(p=>p.dex.type)).size;
   document.getElementById('endDetail').innerHTML=
     '🎒 物品箱: '+bag.length+'/'+MAX_BAG+'<br>'+
