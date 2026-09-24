@@ -292,6 +292,7 @@ function petMoveToward(p, tx, ty, dt){
   p.y+=Math.sin(a)*mv*dt;
 }
 function petFight(p,dt,ownerFlag){
+  let hasTarget=false;
   // 搵目標：先敵方寵(其他 owner)，後中立怪(磨到HP1)
   let target=null, best=1e9;
   // NPC 寵（若玩家寵，target NPC 嘅 pets；若 NPC 寵，target 玩家寵）
@@ -309,8 +310,9 @@ function petFight(p,dt,ownerFlag){
   }
   if(!target){
     // 無目標就按控制模式行
-    return;
+    return false;
   }
+  hasTarget=true;
   // 行向 target
   petMoveToward(p,target.x,target.y,dt);
   p.atkCd-=dt;
@@ -332,6 +334,7 @@ function petFight(p,dt,ownerFlag){
       if(target.hp<=1){ target.pending=true; target.pendingT=performance.now(); pendingCount++; }
     }
   }
+  return hasTarget;
 }
 function onPetDown(pet){
   // 寵物死亡：變精靈球，原玩家/NPC 要執返（執返先放返入箱）
@@ -555,13 +558,20 @@ function update(dtS){
 
   // 玩家寵物：控制模式 + 對戰
   for(const p of [...pets]){
-    // 控制
-    if(ctrlMode==='follow'){
-      petMoveToward(p,player.x,player.y,dtS);
-    } else if(ctrlMode==='flag'&&flagPt){
-      petMoveToward(p,flagPt.x,flagPt.y,dtS);
-    } // random 唔郁（petFight 內自己行向目標）
-    petFight(p,dtS,'player');
+    const toTarget = petFight(p,dtS,'player');   // 返回有冇追蹤緊目標
+    // 控制模式（冇目標追蹤時先按模式行）
+    if(!toTarget){
+      if(ctrlMode==='follow'){
+        petMoveToward(p,player.x,player.y,dtS);
+      } else if(ctrlMode==='flag'&&flagPt){
+        petMoveToward(p,flagPt.x,flagPt.y,dtS);
+      } else {
+        // random：自由隨機踱步
+        p.wanderT=(p.wanderT||0)-dtS;
+        if(p.wanderT<=0){ p.wanderT=1.5+Math.random()*2.5; p.wanderA=Math.random()*6.28; }
+        petMoveToward(p, p.x+Math.cos(p.wanderA)*60, p.y+Math.sin(p.wanderA)*60, dtS);
+      }
+    }
   }
 
   // 野怪：徘徊 / 待收服倒數
